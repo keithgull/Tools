@@ -1,6 +1,20 @@
 Attribute VB_Name = "SheetUtils"
 Option Explicit
 
+Public Function ClearData(ByRef ws As Worksheet, ByVal rangeName As String, Optional useMessage As Boolean, Optional message As String = "データをクリアしますか？") As Boolean
+    Dim msgRet As VbMsgBoxResult
+    If (useMessage) Then
+        msgRet = MsgBox(message, "クリアの確認", vbYesNo)
+        If (msgRet = vbNo) Then
+            ClearData = False
+            Exit Function
+        End If
+    End If
+   
+    ws.Range(rangeName).ClearContents
+    ClearData = True
+End Function
+
 Function AddSheet(templateSheetName As String, newSheetName As String, excludeSheetArray() As String) As Worksheet
     Dim ws As Worksheet
     Dim template As Worksheet

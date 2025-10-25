@@ -21,7 +21,7 @@ Private Sub ILoggerOutput_OutputLogMsg(ByVal message As String)
     Debug.Print message
 End Sub
 
-Private Sub ILoggerOutput_ClearLog(ByVal target As String)
+Private Sub ILoggerOutput_ClearLog(ByVal Target As String)
      Debug.Print String(200, vbCrLf)
      Debug.Print String(200, Chr(8))
 End Sub

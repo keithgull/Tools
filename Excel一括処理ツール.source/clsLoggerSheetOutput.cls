@@ -105,7 +105,7 @@ Private Sub ILoggerOutput_OutputLogMsg(ByVal message As String)
     currentRow_ = currentRow_ + 1
 End Sub
 
-Private Sub ILoggerOutput_ClearLog(ByVal target As String)
+Private Sub ILoggerOutput_ClearLog(ByVal Target As String)
     targetSheet_.Range(targetLogArea_).ClearContents
 End Sub
 

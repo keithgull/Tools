@@ -226,7 +226,7 @@ Function GetExecutor(func As String) As iExecutor
         Case "属性変更"
             Set executor = New clsExecutorFileAttribute
         Case "シート名変更"
-            Set executor = New clsExecutorReplace
+            Set executor = New clsExecutorSheetName
         Case "ファイル内容置換"
             Set executor = New clsExecutorGrepAndReplace
         Case Else

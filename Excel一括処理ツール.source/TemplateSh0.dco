@@ -1,0 +1,72 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "TemplateSh0"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+
+Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)
+    Dim headerRow As Integer
+    Dim checkcol As Integer
+    Dim maxRow As Integer
+    Dim allChecked As Boolean
+    headerRow = Me.Range("TPL_HEADER_SELECT").row
+    checkcol = Me.Range("TPL_HEADER_SELECT").Column
+    maxRow = headerRow + Me.Range("AVAILABLE_DATA_COUNT").Value
+    allChecked = Me.Range("ALL_CHECK_FLG").Value
+    
+    Dim targetRow As Long
+    Dim targetCol As Integer
+    
+    targetRow = Target.row
+    targetCol = Target.Column
+    ' チェックボックスの範囲でダブルクリックが行われた場合
+    If Not Intersect(Target, Me.Range("RANGE_CHECK_LISTDATA")) Is Nothing Then
+        If Target.Value = ChrW(&H2713) Then
+            Target.Value = ""
+        Else
+            Target.Value = ChrW(&H2713) ' ? を表示
+            
+        End If
+        Cancel = True
+    End If
+    ' ヘッダの領域でダブルクリックが行われた場合
+    If targetRow = headerRow And targetCol = checkcol Then
+        If (Not allChecked) Then
+            Call CheckAll(Me, ChrW(&H2713), maxRow)
+            Me.Range("ALL_CHECK_FLG").Value = True
+        Else
+            Call CheckAll(Me, "", maxRow)
+            Me.Range("ALL_CHECK_FLG").Value = False
+        End If
+        Cancel = True
+    End If
+End Sub
+
+
+Private Sub CheckAll(ByRef ws As Worksheet, val As String, maxCount As Integer)
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+    Dim i As Integer
+    Dim startRow As Integer
+    Dim checkcol As Integer
+    Dim fileCol As Integer
+    
+    startRow = ws.Range("TPL_HEADER_SELECT").row + 1
+    checkcol = ws.Range("TPL_HEADER_SELECT").Column
+    fileCol = ws.Range("TPL_HEADER_FILENAME").Column
+    
+    Dim curRow As Integer
+    For i = 0 To maxCount
+        curRow = startRow + i
+        If ws.Cells(curRow, fileCol).Value <> "" Then
+            ws.Cells(curRow, checkcol).Value = val
+        End If
+    Next
+Application.ScreenUpdating = True
+Application.EnableEvents = True
+End Sub

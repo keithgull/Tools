@@ -54,7 +54,7 @@ Private Sub ILoggerOutput_OutputLogMsg(ByVal message As String)
     Close #fnum
 End Sub
 
-Private Sub ILoggerOutput_ClearLog(ByVal target As String)
+Private Sub ILoggerOutput_ClearLog(ByVal Target As String)
      
 End Sub
 

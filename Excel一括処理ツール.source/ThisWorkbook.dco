@@ -1,0 +1,51 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "ThisWorkbook"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+
+Private logger As New clsLogger
+
+
+
+'
+'Private Sub Workbook_Open()
+'
+'    Dim log As New clsLogger
+'    'Set log = logger.GetLogger()
+'
+'    ' Enumを使って初期化
+'    'log.InitializeLogger LOGGER_TYPE_DEBUGPRINT, "", "", DebugLogNormal, 10                    ' Debug.printを使ったログ
+'    'log.InitializeLogger LOGGER_TYPE_LOGFILE, "C:\Work", "vbalogout.log", FileLogTimeBasedName, 200           ' ログファイルへ出力するログ
+'    log.InitializeLogger LOGGER_TYPE_LOGSHEET, "log", "C10", SheetLogFormatted, 10
+'    ' シートに出力するログ
+'
+'    log.SetLogLevel LOGLEVEL_DEBUG, True
+'    log.SetLogLevel LOGLEVEL_INFO, True
+'    log.InfoLog "開始"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'    log.DebugLog "デバッグ情報"
+'
+'End Sub
+'
+
