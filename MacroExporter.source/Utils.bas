@@ -1,7 +1,58 @@
 Attribute VB_Name = "Utils"
 Option Explicit
 
-Public Function SelectFolderAndSetPath(defaultPath As String, dialogTitle As String, cancelMsg As String, Optional silentmode As Boolean = True) As String
+
+' 共通のファイル参照処理
+'  ワークシートの特定のセルに対してファイル選択を行い、選択されたファイルパスを設定します。
+'   CommonFileRef
+'    →SelectFileAndSetPath
+'
+Public Function CommonFileRef(ws As Worksheet, rngName As String, defaultpath As String, fileType As String, fileFilter As String, dialogTitle As String, cancelMsg As String, Optional silentMode As Boolean = True) As String
+    Dim ret As String
+    Dim defPath As String
+    Dim rngTarget As Range
+
+    Set rngTarget = ws.Range(rngName)
+    defPath = rngTarget.Value
+    If defPath = "" Then
+        defPath = defaultpath
+    End If
+    ret = SelectFileAndSetPath(defPath, fileType, fileFilter, dialogTitle, cancelMsg, silentMode)
+    If ret <> "" Then
+        rngTarget.Value = ret
+    End If
+
+    Set rngTarget = Nothing
+    CommonFileRef = ret
+End Function
+
+' 共通のフォルダ参照処理
+'  ワークシートの特定のセルに対してフォルダ選択を行い、選択されたフォルダパスを設定します。
+'   CommonFolderRef
+'    →SelectFolderAndSetPath
+'
+Public Function CommonFolderRef(ws As Worksheet, rngName As String, defaultpath As String, dialogTitle As String, cancelMsg As String, Optional silentMode As Boolean = True) As String
+    Dim ret As String
+    Dim defPath As String
+    Dim rngTarget As Range
+
+    Set rngTarget = ws.Range(rngName)
+    
+    defPath = rngTarget.Value
+    If defPath = "" Then
+        defPath = defaultpath
+    End If
+    ret = SelectFolderAndSetPath(defPath, dialogTitle, cancelMsg, silentMode)
+    If ret <> "" Then
+        rngTarget.Value = ret
+    End If
+    
+    Set rngTarget = Nothing
+    CommonFolderRef = ret
+End Function
+
+
+Public Function SelectFolderAndSetPath(defaultpath As String, dialogTitle As String, cancelMsg As String, Optional silentMode As Boolean = True) As String
     Dim folderPath As String
     Dim dialog As FileDialog
     
@@ -11,8 +62,8 @@ Public Function SelectFolderAndSetPath(defaultPath As String, dialogTitle As Str
     ' ダイアログの設定
     dialog.Title = IIf(dialogTitle <> "", dialogTitle, "フォルダを選択してください")
     dialog.AllowMultiSelect = False
-    dialog.InitialFileName = defaultPath
-    cancelMsg = IIf(silentmode = False And cancelMsg <> "", cancelMsg, "フォルダ選択がキャンセルされました。")
+    dialog.InitialFileName = defaultpath
+    cancelMsg = IIf(silentMode = False And cancelMsg <> "", cancelMsg, "フォルダ選択がキャンセルされました。")
     
     ' ダイアログを表示して選択
     If dialog.Show = -1 Then
@@ -23,14 +74,14 @@ Public Function SelectFolderAndSetPath(defaultPath As String, dialogTitle As Str
         SelectFolderAndSetPath = folderPath
         Exit Function
     Else
-        If silentmode = False Then
+        If silentMode = False Then
             MsgBox cancelMsg, vbExclamation
         End If
     End If
     SelectFolderAndSetPath = ""
 End Function
 
-Public Function SelectFileAndSetPath(defaultPath As String, fileType As String, fileFilter As String, dialogTitle As String, cancelMsg As String, Optional silentmode As Boolean = True) As String
+Public Function SelectFileAndSetPath(defaultpath As String, fileType As String, fileFilter As String, dialogTitle As String, cancelMsg As String, Optional silentMode As Boolean = True) As String
     Dim filePath As String
     Dim dialog As FileDialog
     
@@ -42,8 +93,8 @@ Public Function SelectFileAndSetPath(defaultPath As String, fileType As String, 
     dialog.Filters.Add fileType, fileFilter
     dialog.Title = IIf(dialogTitle <> "", dialogTitle, "ファイルを選択してください")
     dialog.AllowMultiSelect = False
-    dialog.InitialFileName = defaultPath
-    cancelMsg = IIf(silentmode = False And cancelMsg <> "", cancelMsg, "ファイル選択がキャンセルされました。")
+    dialog.InitialFileName = defaultpath
+    cancelMsg = IIf(silentMode = False And cancelMsg <> "", cancelMsg, "ファイル選択がキャンセルされました。")
     
     ' ダイアログを表示して選択
     If dialog.Show = -1 Then
@@ -54,7 +105,7 @@ Public Function SelectFileAndSetPath(defaultPath As String, fileType As String, 
         SelectFileAndSetPath = filePath
         Exit Function
     Else
-        If silentmode = False Then
+        If silentMode = False Then
             MsgBox cancelMsg, vbExclamation
         End If
     End If

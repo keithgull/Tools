@@ -55,6 +55,10 @@ Sub Export()
     Dim dirName As String
     Dim chkNoMacro As Boolean
     Dim bookName As String
+    Dim clsCnt As Integer
+    Dim modCnt As Integer
+    Dim frmCnt As Integer
+    Dim dcoCnt As Integer
     
     Set ws = ThisWorkbook.Worksheets(SHEET_MAIN)
     Set pathRng = ws.Range("OUTPUT_PATH")
@@ -83,22 +87,26 @@ Sub Export()
                 blnExport = True
                 strExt = ".dco"
                 logstr = "Exporting Document object: " & vbc.Name & strExt
+                dcoCnt = dcoCnt + 1
             Case VBIDE.vbext_ComponentType.vbext_ct_ActiveXDesigner:
                 logstr = "Skipping Active X Designer type: " & vbc.Name
             Case VBIDE.vbext_ComponentType.vbext_ct_StdModule:
                 blnExport = True
                 strExt = ".bas"
                 logstr = "Exporting Standard Module: " & vbc.Name & strExt
+                modCnt = modCnt + 1
             Case VBIDE.vbext_ComponentType.vbext_ct_MSForm:
                 blnExport = True
                 strExt = ".frm"
                 logstr = "Exporting MS Form: " & vbc.Name & strExt
+                frmCnt = frmCnt + 1
             Case VBIDE.vbext_ComponentType.vbext_ct_ClassModule:
                 blnExport = True
                 strExt = ".cls"
                 logstr = "Exporting Class module: " & vbc.Name & strExt
+                clsCnt = clsCnt + 1
             Case Else:
-                    logstr = "Skipping unsupported type: " & vbc.Name & "(" & CStr(vbc.Type) & ")"
+                logstr = "Skipping unsupported type: " & vbc.Name & "(" & CStr(vbc.Type) & ")"
         End Select
         
         If blnExport Then
@@ -117,7 +125,7 @@ Sub Export()
                     vbc.CodeModule.DeleteLines 1, vbc.CodeModule.CountOfLines
             End Select
         Next
-        
+        wb.Windows(1).Visible = True
         wb.SaveAs dirName & bookName & ".xlsx", FileFormat:=xlOpenXMLWorkbook
     End If
     
@@ -125,6 +133,13 @@ Sub Export()
         'Stop
         wb.Close False
     End If
+    MsgBox "エクスポート完了：モジュールファイルを出力しました。" & vbCrLf & _
+        "　クラスモジュール" & Chr(9) & Chr(9) & "： " & clsCnt & vbCrLf & _
+        "　標準モジュール" & Chr(9) & Chr(9) & "： " & modCnt & vbCrLf & _
+        "　フォームモジュール" & Chr(9) & Chr(9) & "： " & frmCnt & vbCrLf & _
+        "　Documentモジュール" & Chr(9) & "： " & dcoCnt & vbCrLf & _
+        "　トータル" & Chr(9) & Chr(9) & Chr(9) & "： " & (clsCnt + modCnt + frmCnt + dcoCnt) & vbCrLf
+    
 End Sub
 
 Sub Import()
@@ -167,9 +182,15 @@ Sub Import()
         ext = LCase(fso.GetExtensionName(moduleFile.Name))
         If ext = "bas" Or _
            ext = "cls" Or _
-           ext = "frm" Or _
-           ext = "dco" Then
+           ext = "frm" Then
             wb.VBProject.VBComponents.Import moduleFile.path
+        ElseIf ext = "dco" Then
+            Dim moduleFileName As String
+            Dim moduleName As String
+            moduleFileName = Right(moduleFile.path, Len(moduleFile.path) - InStrRev(moduleFile.path, "\"))
+            moduleName = Replace(moduleFileName, ".dco", "")
+            'wb.VBProject.VBComponents.Import moduleFile.path
+            Call InjectDocumentModuleCode(wb, moduleFile.path, moduleName)
         End If
     Next
 
@@ -185,70 +206,65 @@ Sub Import()
     Set fileObj = Nothing
 End Sub
 
+Sub InjectDocumentModuleCode(wb As Workbook, modulePath As String, moduleName As String)
+    Dim targetComp As VBIDE.VBComponent
+    Dim fso As Scripting.FileSystemObject
+    Dim ts As Object
+    Dim line As String, code As String
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set ts = fso.OpenTextFile(modulePath, 1)
+
+    Do Until ts.AtEndOfStream
+        line = ts.ReadLine
+        If Trim(line) Like "VERSION*" Or _
+           Trim(line) = "BEGIN" Or _
+           Trim(line) = "END" Or _
+           Trim(line) Like "MultiUse*" Or _
+           Trim(line) Like "Attribute VB_*" Then
+            ' スキップ
+        Else
+            code = code & line & vbCrLf
+        End If
+    Loop
+    ts.Close
+
+    Set targetComp = wb.VBProject.VBComponents(moduleName) ' ← 対象モジュール名
+
+    If code <> "" Then
+        With targetComp.CodeModule
+            .DeleteLines 1, .CountOfLines   ' 既存コードを削除
+            .InsertLines 1, code            ' 新しいコードを注入
+        End With
+    End If
+End Sub
+
 Sub ExcelFileRef()
     Dim ws As Worksheet
-    Dim rngTargetBook As Range
-    Dim ret As String
-    Dim defPath As String
     
     Set ws = ThisWorkbook.Worksheets(SHEET_MAIN)
-    Set rngTargetBook = ws.Range("ORIGINAL_BOOK")
-    defPath = rngTargetBook.Value
-    If defPath = "" Then
-        defPath = ThisWorkbook.path
-    End If
-    ret = SelectFileAndSetPath(defPath, "Excel book", "*.xlsx", "マクロ取込元のExcelブックを設定してください。", "", False)
-    If ret <> "" Then
-        rngTargetBook.Value = ret
-    End If
+    Call CommonFileRef(ws, "ORIGINAL_BOOK", ThisWorkbook.path, "Excel book", "*.xlsx", "マクロ取込元のExcelブックを設定してください。", "", False)
     
     Set ws = Nothing
-    Set rngTargetBook = Nothing
-    
 End Sub
+
 
 Sub ImportFolderRef()
     Dim ws As Worksheet
-    Dim ret As String
-    Dim defPath As String
-    Dim rngImportPath As Range
     
     Set ws = ThisWorkbook.Worksheets(SHEET_MAIN)
-    Set rngImportPath = ws.Range("MACRO_FOLDER")
-    
-    defPath = rngImportPath.Value
-    If defPath = "" Then
-        defPath = ThisWorkbook.path
-    End If
-    ret = SelectFolderAndSetPath(defPath, "インポート対象のマクロモジュールのフォルダを設定してください。", "", False)
-    If ret <> "" Then
-        rngImportPath.Value = ret
-    End If
-    
+    Call CommonFolderRef(ws, "MACRO_FOLDER", ThisWorkbook.path, "インポート対象のマクロモジュールのフォルダを設定してください。", "", False)
+        
     Set ws = Nothing
-    Set rngImportPath = Nothing
-    
 End Sub
 
 Sub OutputFolderRef()
     Dim ws As Worksheet
-    Dim ret As String
-    Dim defPath As String
-    Dim rngOutputPath As Range
     
     Set ws = ThisWorkbook.Worksheets(SHEET_MAIN)
-    Set rngOutputPath = ws.Range("OUTPUT_MACRO_PATH")
-    
-    defPath = rngOutputPath.Value
-    If defPath = "" Then
-        defPath = ThisWorkbook.path
-    End If
-    ret = SelectFolderAndSetPath(defPath, "マクロ統合ブックの出力先のフォルダを設定してください。", "", False)
-    If ret <> "" Then
-        rngOutputPath.Value = ret
-    End If
-    
+    Call CommonFolderRef(ws, "OUTPUT_MACRO_PATH", ThisWorkbook.path, "マクロ統合ブックの出力先のフォルダを設定してください。", "", False)
+        
     Set ws = Nothing
-    Set rngOutputPath = Nothing
-
 End Sub
+
+
