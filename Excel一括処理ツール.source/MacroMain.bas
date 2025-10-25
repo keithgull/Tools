@@ -37,9 +37,14 @@ End Sub
 Public Sub ReferenceFolder()
     Dim ws As Worksheet
     Dim ret As String
+    Dim defPath As String
     
-    Set ws = ThisWorkbook.ActiveSheet
-    ret = SelectFolderAndSetPath("Excelブックを検索するフォルダを設定してください。", "", False)
+    Set ws = ThisWorkbook.Worksheets(SHEET_TOOL)
+    defPath = ws.Range("TARGET_FOLDER").Value
+    If defPath = "" Then
+        defPath = ThisWorkbook.path
+    End If
+    ret = SelectFolderAndSetPath(defPath, "Excelブックを検索するフォルダを設定してください。", "", False)
     If ret <> "" Then
         ws.Range("TARGET_FOLDER").Value = ret
     End If

@@ -1,7 +1,7 @@
 Attribute VB_Name = "Utils"
 Option Explicit
 
-Public Function SelectFolderAndSetPath(dialogTitle As String, cancelMsg As String, Optional silentmode As Boolean = True) As String
+Public Function SelectFolderAndSetPath(defaultPath As String, dialogTitle As String, cancelMsg As String, Optional silentmode As Boolean = True) As String
     Dim folderPath As String
     Dim dialog As FileDialog
     
@@ -11,6 +11,7 @@ Public Function SelectFolderAndSetPath(dialogTitle As String, cancelMsg As Strin
     ' ダイアログの設定
     dialog.Title = IIf(dialogTitle <> "", dialogTitle, "フォルダを選択してください")
     dialog.AllowMultiSelect = False
+    dialog.InitialFileName = defaultPath
     cancelMsg = IIf(silentmode = False And cancelMsg <> "", cancelMsg, "フォルダ選択がキャンセルされました。")
     
     ' ダイアログを表示して選択
