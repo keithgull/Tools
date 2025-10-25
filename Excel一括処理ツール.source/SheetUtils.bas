@@ -4,7 +4,7 @@ Option Explicit
 Public Function ClearData(ByRef ws As Worksheet, ByVal rangeName As String, Optional useMessage As Boolean, Optional message As String = "データをクリアしますか？") As Boolean
     Dim msgRet As VbMsgBoxResult
     If (useMessage) Then
-        msgRet = MsgBox(message, "クリアの確認", vbYesNo)
+        msgRet = MsgBox(message, vbYesNo, "クリアの確認")
         If (msgRet = vbNo) Then
             ClearData = False
             Exit Function
@@ -87,7 +87,7 @@ Sub DeleteSheet(targetSheetName As String)
     Application.DisplayAlerts = True
 End Sub
 
-Function GetWorksheetByName(sheetName As String, silentmode As Boolean) As Worksheet
+Function GetWorksheetByName(sheetName As String, silentMode As Boolean) As Worksheet
     Dim ws As Worksheet
     On Error Resume Next
     Set ws = ThisWorkbook.Sheets(sheetName)
@@ -109,4 +109,101 @@ Function WorksheetExists(sheetName As String) As Boolean
         End If
     Next ws
 End Function
+
+' セルをチェックボックスとした際に、全チェック処理・全解除を行うための処理
+'
+' 引数：
+'       ws                      : ワークシート
+'       maxCount                : データの処理件数
+'       checkHeaderRngName      : チェックボックス列とした列のヘッダ行の名前
+'       dataExistCheckRngName   : データの存在チェックを行う列の名前
+Public Sub CheckAll(ByRef ws As Worksheet, val As String, maxCount As Long, checkHeaderRngName As String, dataExistCheckRngName As String, useFilter As Boolean)
+Application.EnableEvents = False
+Application.ScreenUpdating = False
+    Dim i As Integer
+    Dim startRow As Integer
+    Dim checkCol As Integer
+    Dim fileCol As Integer
+    
+    startRow = ws.Range(checkHeaderRngName).row + 1
+    checkCol = ws.Range(checkHeaderRngName).Column
+    fileCol = ws.Range(dataExistCheckRngName).Column
+    
+    Dim curRow As Integer
+    For i = 0 To maxCount
+        curRow = startRow + i
+        If useFilter Then
+            If ws.Cells(curRow, fileCol).EntireRow.Hidden = False Then
+                If ws.Cells(curRow, fileCol).Value <> "" Then
+                    ws.Cells(curRow, checkCol).Value = val
+                End If
+            End If
+        Else
+            If ws.Cells(curRow, fileCol).Value <> "" Then
+                ws.Cells(curRow, checkCol).Value = val
+            End If
+        End If
+    Next
+Application.ScreenUpdating = True
+Application.EnableEvents = True
+End Sub
+
+' ボタンが押されたワークシートを特定し、ワークシートを返す
+Function GetButtonParentSheet(buttonName As String) As Worksheet
+    Dim ws As Worksheet
+    Dim shp As Shape
+    
+    For Each ws In ThisWorkbook.Worksheets
+        On Error Resume Next
+        Set shp = ws.Shapes(buttonName)
+        If Err.Number = 0 Then
+            Set GetButtonParentSheet = ws
+            Exit Function
+        End If
+        Err.Clear
+        On Error GoTo 0
+    Next
+    Set GetButtonParentSheet = Nothing ' 見つからなかった場合
+End Function
+
+
+Function CommonDoubleClickAndCheck(ByRef ws As Worksheet, ByVal rngCheckHeaderName As String, dataCount As Long, rngAllChecked As String, ByVal checkboxRange As String, ByVal dataCheckHeaderRng As String, _
+                                   ByVal checkStr As String, ByVal target As Range, cancel As Boolean, useFilter As Boolean)
+    Dim targetRow As Long
+    Dim targetCol As Integer
+    Dim headerRow As Long
+    Dim checkCol As Integer
+    Dim allChecked As Boolean
+    Dim maxRow As Long
+    
+    headerRow = ws.Range(rngCheckHeaderName).row
+    checkCol = ws.Range(rngCheckHeaderName).Column
+    allChecked = ws.Range(rngAllChecked).Value
+    maxRow = headerRow + dataCount
+    
+    targetRow = target.row
+    targetCol = target.Column
+    If Not Intersect(target, ws.Range(checkboxRange)) Is Nothing Then
+        If target.Value = checkStr Then
+            target.Value = ""
+        Else
+            target.Value = checkStr ' check を表示
+        End If
+        cancel = True
+    End If
+        
+    ' ヘッダの領域でダブルクリックが行われた場合
+    If targetRow = headerRow And targetCol = checkCol Then
+        If (Not allChecked) Then
+            Call CheckAll(ws, checkStr, maxRow, rngCheckHeaderName, dataCheckHeaderRng, useFilter)
+            ws.Range(rngAllChecked).Value = True
+        Else
+            Call CheckAll(ws, "", maxRow, rngCheckHeaderName, dataCheckHeaderRng, useFilter)
+            ws.Range(rngAllChecked).Value = False
+        End If
+        cancel = True
+    End If
+    
+End Function
+
 

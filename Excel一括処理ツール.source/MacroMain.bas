@@ -2,6 +2,7 @@ Attribute VB_Name = "MacroMain"
 Option Explicit
 
 Public Const SHEET_TOOL As String = "ツール"
+Public Const SHEET_CONFIG As String = "設定"
 
 Public Const EXCLUDE_SHEETNAMES As String = "ShConfig,ShToolMain,TemplateSh0,TemplateSh1,TemplateSh2"
 
@@ -26,29 +27,22 @@ Type tpExcludeList
     excludeFolderArray() As String
 End Type
 
+Public Function GetMainWs() As Worksheet
+    Set GetMainWs = ThisWorkbook.Worksheets(SHEET_TOOL)
+End Function
+
+Public Function GetConfigWs() As Worksheet
+    Set GetConfigWs = ThisWorkbook.Worksheets(SHEET_CONFIG)
+End Function
+
 ' クリアボタンを押したときの処理
 Public Sub ClearFileList()
-    Dim target As Range
-    Set target = ThisWorkbook.Worksheets(SHEET_TOOL).Range(RNG_FILE_LIST)
-    target.ClearContents
+    Call ClearData(GetMainWs(), RNG_FILE_LIST, True, "一覧をクリアしてもいいですか？")
 End Sub
 
 ' 参照ボタンを押したときの処理
 Public Sub ReferenceFolder()
-    Dim ws As Worksheet
-    Dim ret As String
-    Dim defPath As String
-    
-    Set ws = ThisWorkbook.Worksheets(SHEET_TOOL)
-    defPath = ws.Range("TARGET_FOLDER").Value
-    If defPath = "" Then
-        defPath = ThisWorkbook.path
-    End If
-    ret = SelectFolderAndSetPath(defPath, "Excelブックを検索するフォルダを設定してください。", "", False)
-    If ret <> "" Then
-        ws.Range("TARGET_FOLDER").Value = ret
-    End If
-    
+    Call CommonFolderRef(GetMainWs(), "TARGET_FOLDER", ThisWorkbook.path, "Excelブックを検索するフォルダを設定してください。", "", False)
 End Sub
 
 ' 「ファイル一覧取得」ボタンを押したときの処理
@@ -67,7 +61,7 @@ Public Sub RetrieveFileList()
     baseFolder = Range("TARGET_FOLDER").Value
     
     ' ワークシート設定
-    Set ws = ThisWorkbook.Sheets("ツール")
+    Set ws = GetMainWs()
     
     ' 過去の一覧をクリア
     ws.Range("RANGE_FILE_LIST").ClearContents
@@ -143,8 +137,8 @@ Public Sub ReadListFiles()
     Dim tplStartRow As Long
     excludeSheetArray = Split(EXCLUDE_SHEETNAMES, ",")
     
-    Set ws = ThisWorkbook.Worksheets("ツール")
-    Set configWs = ThisWorkbook.Worksheets("設定")
+    Set ws = GetMainWs()
+    Set configWs = GetConfigWs()
     filecount = ws.Range("FILE_COUNT").Value
     
     startRow = ws.Range("HEADER_FOLDER").row + 1
@@ -199,6 +193,46 @@ Public Sub ReadListFiles()
     Next
     
 End Sub
+
+Public Sub ExecuteSheetTask()
+    Dim mainWs As Worksheet
+    Dim taskWs As Worksheet
+    Dim btnName As String
+    Dim executor As iExecutor
+    Dim tplStartRow As Long
+    Dim tplRow As Long
+    Dim currentRow As Long
+    
+    Dim startRow As Long
+    Dim endRow As Long
+    
+    
+    Dim log As clsLogger
+    Dim loggerType As LOGGER_TYPE
+    Dim logOutMode As LogOutputMode
+    Dim param1 As String
+    Dim param2 As String
+    
+    
+    Set mainWs = GetMainWs()
+    Set taskWs = ActiveSheet
+    
+    Set executor = GetExecutor(mainWs.Range("EXEC_FUNCTION").Value)
+    Call executor.InitExecutor(taskWs)
+    tplStartRow = taskWs.Range("TPL_HEADER_ROW").row + 1
+    tplRow = tplStartRow
+    
+    Set log = InitLogger(loggerType, param1, param2, logOutMode, 100000, False)
+    
+    ' メインループ
+    For currentRow = startRow To endRow
+    
+    
+    Next
+    
+    Debug.Print taskWs.Name
+End Sub
+
 
 Function InitExecParams(ws As Worksheet) As tpExecParams
     Dim params As tpExecParams

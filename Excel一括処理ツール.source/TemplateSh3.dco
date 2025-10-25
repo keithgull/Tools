@@ -7,3 +7,12 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
+Option Explicit
+
+Private Sub Worksheet_BeforeDoubleClick(ByVal target As Range, cancel As Boolean)
+    Dim dataCount As Long
+    Dim headerRow As Long
+    
+    dataCount = Me.Range("AVAILABLE_DATA_COUNT").Value
+    Call CommonDoubleClickAndCheck(Me, "TPL_HEADER_SELECT", dataCount, "ALL_CHECK_FLG", "RANGE_CHECK_LISTDATA", "TPL_HEADER_FILENAME", ChrW(&H2713), target, cancel, True)
+End Sub

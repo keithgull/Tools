@@ -134,8 +134,8 @@ Function GetCellRangeToArray(rangeName As String) As String()
     Next cell
     
     ' コレクションを配列に変換
-    ReDim cellArray(0 To cellList.Count - 1)
-    For i = 1 To cellList.Count
+    ReDim cellArray(0 To cellList.count - 1)
+    For i = 1 To cellList.count
         cellArray(i - 1) = cellList(i)
     Next i
     
