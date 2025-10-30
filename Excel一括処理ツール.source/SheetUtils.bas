@@ -110,6 +110,18 @@ Function WorksheetExists(sheetName As String) As Boolean
     Next ws
 End Function
 
+'
+' フォームボタンに定義されているマクロに引数を渡した状態で設定する
+Sub modifySheetButton(ws As Worksheet, macroName As String)
+    Dim btnShp As Shape
+
+    For Each btnShp In ws.Shapes
+        If btnShp.Type = msoFormControl And btnShp.FormControlType = xlButtonControl Then
+            btnShp.OnAction = "'" & macroName & """" & ws.Name & """'"
+        End If
+    Next btnShp
+End Sub
+
 ' セルをチェックボックスとした際に、全チェック処理・全解除を行うための処理
 '
 ' 引数：

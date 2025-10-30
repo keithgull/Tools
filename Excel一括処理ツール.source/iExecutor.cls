@@ -18,7 +18,7 @@ Public Function ReadFile(ByRef ws As Worksheet, ByRef wb As Workbook, ByVal base
 
 End Function
 
-Public Sub Execute(ByRef ws As Worksheet, ByVal caller As String, ByRef curRow As Integer, ByVal folderName As String, ByVal fileName As String, Optional log As clsLogger = Nothing)
+Public Sub Execute(ByRef ws As Worksheet, ByVal caller As String, ByRef curRow As Long, ByVal folderName As String, ByVal fileName As String, Optional log As clsLogger = Nothing)
     ' 実装は各出力クラスで行う
 End Sub
 

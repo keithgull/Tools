@@ -11,7 +11,7 @@ Public Const RNG_FILE_LIST As String = "RANGE_FILE_LIST"
 
 Type tpExecParams
     recurse As Boolean
-    attrib  As Boolean
+    append  As Boolean
 End Type
 
 Type tpListCol
@@ -20,6 +20,8 @@ Type tpListCol
     fileSizeCol As Integer
     fileCrdtCol As Integer
     fileUpdtCol As Integer
+    fileChekCol As Integer
+    checkFlgCol As Integer
 End Type
 
 Type tpExcludeList
@@ -63,16 +65,19 @@ Public Sub RetrieveFileList()
     ' ワークシート設定
     Set ws = GetMainWs()
     
-    ' 過去の一覧をクリア
-    ws.Range("RANGE_FILE_LIST").ClearContents
-    
-    ' 表示を開始する行
-    row = ws.Range("HEADER_FOLDER").row + 1
-    
     ' 各パラメータ初期化
     udtExePrm = InitExecParams(ws)         ' 実行パラメータの初期化
     udtLstCol = InitListCols(ws)           ' リスト列構造体の初期化
     udtExcLst = InitExcludeList(ws)        ' 除外リストの初期化
+        
+    ' 表示を開始する行
+    If udtExePrm.append = True Then
+        row = ws.Range("HEADER_FOLDER").row + ws.Range("FILE_COUNT").Value + 1
+    Else
+        ' 過去の一覧をクリア
+        ws.Range("RANGE_FILE_LIST").ClearContents
+        row = ws.Range("HEADER_FOLDER").row + 1
+    End If
     
     ' 再帰的にファイルを取得
     Call ListFiles(baseFolder, ws, row, udtExePrm, udtLstCol, udtExcLst)
@@ -84,15 +89,17 @@ Sub ListFiles(folderPath As String, ws As Worksheet, ByRef row As Long, udtExePr
     Dim fol As Scripting.folder
     Dim subfolder As Object
     Dim fi As Object
+    Dim basePath As String
            
     ' 指定フォルダの取得
     Set fol = fm.GetFolder(folderPath)
+    basePath = ws.Range("TARGET_FOLDER").Value
         
     ' フォルダ内のファイルをリストアップ
     For Each fi In fol.files
         If fi.Name Like "*.xls*" Then ' Excelファイルのみ
             If Not IsExclude(fi.Name, udtExcLst.excludeFileNmArray) Then
-                ws.Cells(row, udtLstCol.folderNmCol).Value = Replace(fol.path & "\", folderPath, "")  ' 相対フォルダ
+                ws.Cells(row, udtLstCol.folderNmCol).Value = Replace(fol.path & "\", basePath, "")  ' 相対フォルダ
                 ws.Cells(row, udtLstCol.fileNameCol).Value = fi.Name              ' ファイル名
                 ws.Cells(row, udtLstCol.fileSizeCol).Value = fi.Size              ' ファイルサイズ
                 ws.Cells(row, udtLstCol.fileCrdtCol).Value = fi.DateCreated       ' 作成日時
@@ -105,7 +112,7 @@ Sub ListFiles(folderPath As String, ws As Worksheet, ByRef row As Long, udtExePr
     If udtExePrm.recurse Then
         ' サブフォルダも再帰的に検索
         For Each subfolder In fol.Subfolders
-            If IsExclude(subfolder.Name, udtExcLst.excludeFolderArray) Then
+            If Not IsExclude(subfolder.Name, udtExcLst.excludeFolderArray) Then
                 Call ListFiles(subfolder.path, ws, row, udtExePrm, udtLstCol, udtExcLst)
             End If
         Next subfolder
@@ -167,6 +174,8 @@ Public Sub ReadListFiles()
         Exit Sub
     End If
     
+    Call modifySheetButton(newWs, "ExecuteSheetTask")
+    
     ' executorの初期化
     Call executor.InitExecutor(newWs)
     tplStartRow = newWs.Range("TPL_HEADER_ROW").row + 1
@@ -186,15 +195,17 @@ Public Sub ReadListFiles()
         targetFilePathName = basePath & targetFilePath & targetFileName
         
         ' ファイルオープン
-        Set newWB = Workbooks.Open(fileName:=targetFilePathName, ReadOnly:=True)
-        ret = executor.ReadFile(newWs, newWB, basePath, targetFilePath, targetFileName, tplRow, log)
-        newWB.Close saveChanges:=False
-        tplRow = tplRow + 1
+        If ws.Cells(currentRow, udtListCols.checkFlgCol).Value Then
+            Set newWB = Workbooks.Open(fileName:=targetFilePathName, ReadOnly:=True)
+            ret = executor.ReadFile(newWs, newWB, basePath, targetFilePath, targetFileName, tplRow, log)
+            newWB.Close saveChanges:=False
+            tplRow = tplRow + 1
+        End If
     Next
     
 End Sub
 
-Public Sub ExecuteSheetTask()
+Public Sub ExecuteSheetTask(Optional ByVal wsName As String = "")
     Dim mainWs As Worksheet
     Dim taskWs As Worksheet
     Dim btnName As String
@@ -212,10 +223,14 @@ Public Sub ExecuteSheetTask()
     Dim logOutMode As LogOutputMode
     Dim param1 As String
     Dim param2 As String
-    
+    Dim execRet As Integer
     
     Set mainWs = GetMainWs()
-    Set taskWs = ActiveSheet
+    If wsName <> "" Then
+        Set taskWs = ThisWorkbook.Worksheets(wsName)
+    Else
+        Set taskWs = ActiveSheet
+    End If
     
     Set executor = GetExecutor(mainWs.Range("EXEC_FUNCTION").Value)
     Call executor.InitExecutor(taskWs)
@@ -224,11 +239,7 @@ Public Sub ExecuteSheetTask()
     
     Set log = InitLogger(loggerType, param1, param2, logOutMode, 100000, False)
     
-    ' メインループ
-    For currentRow = startRow To endRow
-    
-    
-    Next
+    executor.Execute taskWs, Application.caller, tplStartRow, "", "", log
     
     Debug.Print taskWs.Name
 End Sub
@@ -237,7 +248,7 @@ End Sub
 Function InitExecParams(ws As Worksheet) As tpExecParams
     Dim params As tpExecParams
     params.recurse = IIf(ws.Range("SUBFOLDER_ENABLED").Value = "はい", True, False)
-    params.attrib = IIf(ws.Range("ATTRIBUTE_ENABLED").Value = "はい", True, False)
+    params.append = IIf(ws.Range("APPEND_ENABLED").Value = "はい", True, False)
     InitExecParams = params
 End Function
 
@@ -248,6 +259,8 @@ Function InitListCols(ws As Worksheet) As tpListCol
     listCols.fileSizeCol = ws.Range("HEADER_FILESIZE").Column
     listCols.fileUpdtCol = ws.Range("HEADER_CREATETIME").Column
     listCols.fileCrdtCol = ws.Range("HEADER_UPDATETIME").Column
+    listCols.fileChekCol = ws.Range("HEADER_SELECT").Column
+    listCols.checkFlgCol = ws.Range("HEADER_ALL_CHECK_FLG").Column
     InitListCols = listCols
 End Function
 

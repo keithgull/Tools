@@ -44,7 +44,7 @@ Public Function IExecutor_ReadFile(ByRef ws As Worksheet, ByRef wb As Workbook, 
     
 End Function
 
-Public Sub IExecutor_Execute(ByRef ws As Worksheet, ByVal caller As String, ByRef curRow As Integer, ByVal folderName As String, ByVal fileName As String, Optional log As clsLogger = Nothing)
+Public Sub IExecutor_Execute(ByRef ws As Worksheet, ByVal caller As String, ByRef curRow As Long, ByVal folderName As String, ByVal fileName As String, Optional log As clsLogger = Nothing)
     
 End Sub
 

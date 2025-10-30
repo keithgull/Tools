@@ -38,7 +38,7 @@ Public Function InitLogger(prmLoggerType As LOGGER_TYPE, param1 As String, param
     Dim ret As VbMsgBoxResult
     
     If prmLoggerType = LOGGER_TYPE_DEBUGPRINT Then
-        Call log.InitializeLogger(LOGGER_TYPE_LOGSHEET, "", "", DebugLogNormal, maxLogSize, useModuleName)
+        Call log.InitializeLogger(LOGGER_TYPE_DEBUGPRINT, "", "", DebugLogNormal, maxLogSize, useModuleName)
     ElseIf prmLoggerType = LOGGER_TYPE_LOGFILE Then
         Dim filePath As String
         Dim fileName As String

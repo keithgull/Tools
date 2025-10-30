@@ -34,4 +34,10 @@ End Function
 
 
 
-
+Private Sub Worksheet_BeforeDoubleClick(ByVal target As Range, cancel As Boolean)
+    Dim dataCount As Long
+    Dim headerRow As Long
+    
+    dataCount = Me.Range("FILE_COUNT").Value
+    Call CommonDoubleClickAndCheck(Me, "HEADER_SELECT", dataCount, "HEADER_ALL_CHECK_FLG", "RANGE_CHECK_LISTDATA", "HEADER_FILENAME", ChrW(&H2713), target, cancel, True)
+End Sub

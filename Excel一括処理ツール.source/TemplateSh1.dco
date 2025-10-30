@@ -14,5 +14,5 @@ Private Sub Worksheet_BeforeDoubleClick(ByVal target As Range, cancel As Boolean
     Dim headerRow As Long
     
     dataCount = Me.Range("AVAILABLE_DATA_COUNT").Value
-    Call CommonDoubleClickAndCheck(Me, "TPL_HEADER_SELECT", dataCount, "ALL_CHECK_FLG", "RANGE_CHECK_LISTDATA", "TPL_HEADER_FILENAME", ChrW(&H2713), target, cancel, True)
+    Call CommonDoubleClickAndCheck(Me, "TPL_HEADER_SELECT", dataCount, "TPL_ALL_CHECK_FLG", "TPL_RANGE_CHECK_LISTDATA", "TPL_HEADER_FILENAME", ChrW(&H2713), target, cancel, True)
 End Sub
